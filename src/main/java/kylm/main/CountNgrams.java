@@ -43,12 +43,12 @@ public class CountNgrams {
 		KylmConfigUtils config = new KylmConfigUtils(
 				"CountNgrams"+br+
 				"A program to calculate an n-gram language model given a training corpus"+br+
-		"Example: java -cp kylm.jar kylm.main.CountNgrams training.txt model.arpa");
+		"Example: java -cp kylm.jar kylm.main.CountNgrams -output model.arpa training.txt");
 
 		// Ngram Model Options
 		config.addGroup("N-gram model options");
 		config.addEntry("n", KylmConfigUtils.INT_TYPE, 3, false, "the length of the n-gram context");
-		config.addEntry("trim", KylmConfigUtils.INT_ARRAY_TYPE, null, false, 
+		config.addEntry("trim", KylmConfigUtils.INT_ARRAY_TYPE, null, false,
 		"the trimming for each level of the n-gram (example: 0:1:1)");
 		config.addEntry("name", KylmConfigUtils.STRING_TYPE, null, false, "the name of the model");
 		config.addEntry("smoothuni", KylmConfigUtils.BOOLEAN_TYPE, false, false, "whether or not to smooth unigrams");
@@ -67,7 +67,7 @@ public class CountNgrams {
 		// class options
 		config.addGroup("Class options");
 		config.addEntry("classes", KylmConfigUtils.STRING_TYPE, null, false, "a file containing word class definitions");
-		
+
 		// Smoothing options
 		config.addGroup("Smoothing options [default: kn]");
 		config.addEntry("ml", KylmConfigUtils.BOOLEAN_TYPE, false, false, "maximum likelihood smoothing");
@@ -79,11 +79,12 @@ public class CountNgrams {
 
 		// Output format options
 		config.addGroup("Output options [default: arpa]");
+		config.addEntry("output", KylmConfigUtils.STRING_TYPE, null, false, "the output file");
 		config.addEntry("bin", KylmConfigUtils.BOOLEAN_TYPE, false, false, "output in binary format");
 		config.addEntry("wfst", KylmConfigUtils.BOOLEAN_TYPE, false, false, "output in weighted finite state transducer format (WFST)");
 		config.addEntry("arpa", KylmConfigUtils.BOOLEAN_TYPE, true, false, "output in ARPA format");
 		config.addEntry("neginf", KylmConfigUtils.FLOAT_TYPE, null, false, "the number to print for non-existent backoffs (default: null, example: -99)");
-		
+
 		// Debugging options
 		config.addGroup("Miscellaneous options");
 		config.addEntry("debug", KylmConfigUtils.INT_TYPE, 0, false, "the level of debugging information to print"); // the level of debugging output to write
@@ -94,8 +95,7 @@ public class CountNgrams {
 
 		// check the validity of the arguments
 		int n = config.getInt("n");
-		if(args.length > 2 || 
-				n == -1)
+		if(n == -1)
 			config.exitOnUsage();
 
 		// choose the smoother
@@ -173,7 +173,7 @@ public class CountNgrams {
 			System.err.println("Either specify a vocabulary or load the input directly from a file.");
 			System.exit(1);
 		}
-		
+
 		// get the classes if they exist
 		if(config.getString("classes") != null) {
 			TextFileClassMapReader tfcml = new TextFileClassMapReader(config.getString("classes"));
@@ -181,13 +181,13 @@ public class CountNgrams {
 			cm.getClasses().addAlias(lm.getTerminalSymbol(), lm.getId(lm.getStartSymbol()));
 			lm.setClassMap(cm);
 		}
-		
+
 		// train the model
 		lm.trainModel(loader);
 
 		if(config.getString("vocabout") != null)
 			lm.getVocab().writeToFile(config.getString("vocabout"), false);
-		
+
 		if(config.getBoolean("ukexpand"))
 			lm.expandUnknowns();
 
@@ -196,9 +196,11 @@ public class CountNgrams {
 		long time = System.currentTimeMillis();
 
 		// print the model
-		BufferedOutputStream os = new BufferedOutputStream(
-				(args.length>1?new FileOutputStream(args[1]):System.out), 16384
-		);
+		OutputStream out = System.out;
+		if (config.getString("output") != null) {
+		    out = new FileOutputStream(config.getString("output"));
+		}
+		BufferedOutputStream os = new BufferedOutputStream(out, 16384);
 
 		writer.write(lm, os);
 		os.close();
