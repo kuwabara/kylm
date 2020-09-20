@@ -89,7 +89,7 @@ public class TextFileSentenceReader implements SentenceReader {
 	 * @param fileName The name of the file to be opened
 	 * @throws IOException if the file doesn't exist or is unreadable
 	 */
-	public TextFileSentenceReader(String fileName) throws IOException {
+	public TextFileSentenceReader(String[] fileName) throws IOException {
 	    this(fileName, KylmTextUtils.whiteSpaceString);
 	}
 
@@ -99,8 +99,8 @@ public class TextFileSentenceReader implements SentenceReader {
 	 * @param divider A regular expression that is used to divide strings in the corpus
 	 * @throws IOException if the file doesn't exist or is unreadable
 	 */
-	public TextFileSentenceReader(String fileName, String divider) throws IOException {
-		file = new File(fileName);
+	public TextFileSentenceReader(String[] fileName, String divider) throws IOException {
+		file = new File(fileName[0]);
 		if(!file.canRead())
 			throw new IOException("File "+fileName+" does not exist or is unreadable");
 		this.divider = divider;

@@ -139,7 +139,7 @@ public class CountNgrams {
 		// create the input sentence loader
 		SentenceReader loader =
 			(args.length > 0 ?
-					new TextFileSentenceReader(args[0]) :
+					new TextFileSentenceReader(args) :
 						new TextStreamSentenceReader(System.in));
 
 		// create the n-gram model
