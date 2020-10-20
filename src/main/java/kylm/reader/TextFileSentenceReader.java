@@ -26,8 +26,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import kylm.util.KylmTextUtils;
 
@@ -83,6 +93,7 @@ public class TextFileSentenceReader implements SentenceReader {
 
 	private File file = null;
 	private String divider = null;
+    private List<Path> filePaths;
 
 	/**
 	 * The constructor, saves the file and uses a single space as the default divider
@@ -100,20 +111,42 @@ public class TextFileSentenceReader implements SentenceReader {
 	 * @throws IOException if the file doesn't exist or is unreadable
 	 */
 	public TextFileSentenceReader(String[] fileName, String divider) throws IOException {
-		file = new File(fileName[0]);
-		if(!file.canRead())
-			throw new IOException("File "+fileName+" does not exist or is unreadable");
-		this.divider = divider;
+	    filePaths = Arrays.stream(fileName)
+	        .map(Paths::get)
+	        .collect(Collectors.toList())
+	        ;
+
+	    Set<Path> invalidPaths = filePaths.stream()
+	        .filter(path -> !(Files.isRegularFile(path) && Files.isReadable(path)))
+	        .collect(Collectors.toUnmodifiableSet())
+	        ;
+	    if (!invalidPaths.isEmpty()) {
+	        throw new IOException("Some files do not exist or are unreadable: " + invalidPaths);
+	    }
+
+	    this.divider = divider;
 	}
 
 	@Override
 	public Iterator<String[]> iterator() {
-		try {
-			return new TFSLIterator(file, divider);
-		} catch(IOException e) {
-			e.printStackTrace(System.err);
-			return null;
-		}
+	    try {
+    	    return filePaths.stream()
+    	        .flatMap(path -> {
+                    try {
+                        return Files.lines(path);
+
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+    	        .map(line -> line.split("\\s+"))
+    	        .iterator()
+    	        ;
+
+	    } catch (UncheckedIOException e) {
+	        e.printStackTrace(System.err);
+	        return null;
+        }
 	}
 
 	@Override
