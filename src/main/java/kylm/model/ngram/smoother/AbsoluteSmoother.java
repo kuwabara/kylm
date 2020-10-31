@@ -101,7 +101,10 @@ public class AbsoluteSmoother extends NgramSmoother {
 	}
 
 	private void process(NgramNode node, int i, int n) {
-		System.err.println("process("+lm.getNodeName(node)+", "+i+", "+n);
+	    if (getDebugLevel() > 0) {
+	        System.err.println("process("+lm.getNodeName(node)+", "+i+", "+n);
+	    }
+
 		// if it has no children, nothing to be done
 		if(!node.hasChildren())
 			return;
@@ -128,7 +131,9 @@ public class AbsoluteSmoother extends NgramSmoother {
 			double discount = getDiscount(n, child.getCount());
 			double childScore = (child.getCount()-discount)/sum;
 			realBackoffScore += discount/sum;
-			System.err.println("Setting score for "+lm.getNodeName(child)+" to "+childScore+"("+child.getCount()+" - "+discount+")/"+sum);
+			if (getDebugLevel() > 0) {
+			    System.err.println("Setting score for "+lm.getNodeName(child)+" to "+childScore+"("+child.getCount()+" - "+discount+")/"+sum);
+			}
 			if(child.getScore() != NgramNode.TRIM_SCORE) {
 				child.setScore( (float) Math.log10(childScore) );
 				good++;
@@ -143,7 +148,7 @@ public class AbsoluteSmoother extends NgramSmoother {
 		// interpolate with the fallback state
 		if(i != 0) {
 			for(NgramNode child : node)
-				if(child != null && child.getScore() != NgramNode.TRIM_SCORE) 
+				if(child != null && child.getScore() != NgramNode.TRIM_SCORE)
 					child.setScore(KylmMathUtils.logAddition(child.getScore(), node.getBackoffScore()+child.getFallback().getScore()));
 		}
 		else if (smoothUnigrams) {
@@ -180,5 +185,5 @@ public class AbsoluteSmoother extends NgramSmoother {
 	public void setDefaultDiscount(float defaultDiscount) {
 		this.defaultDiscount = defaultDiscount;
 	}
-	
+
 }
